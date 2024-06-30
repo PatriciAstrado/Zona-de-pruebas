@@ -1,7 +1,22 @@
-#ifndef struct_h
-#define struct_h
-#include "struct.h"
-#endif /* struct_h */
+#ifndef stdlib_h
+#define stdlib_h
+#include <stdlib.h>
+#endif /* stdlid_h */
+
+#ifndef stdio_h
+#define stdio_h
+#include <stdio.h>
+#endif /* stdio_h */
+
+#ifndef string_h
+#define string_h
+#include <string.h>
+#endif /* string_h */
+
+typedef struct Nodo{
+    int digito;
+    struct Nodo *siguiente;
+}Nodo;
 
 Nodo* crearNodo(int digito){
   Nodo* nodo = (Nodo*)malloc(sizeof(Nodo));
@@ -55,9 +70,7 @@ void imprimirLista(struct Nodo* inicio) {
         printf("%d", actual->digito);
         actual = actual->siguiente;
     }
-    
-    //printf("NULL\n");
-    //printf("\n---\n");
+    free(actual);
 }
 
 //devuelve el valor guardado en la posicion dada ex: 132, pedimos pos 2, devuelve 2. Podemos usarlo para ir valor por valor de la lista y hacer varias operaciones
@@ -74,7 +87,7 @@ int leerNumeroLista(struct Nodo* inicio, int posicionDada) {
     }else{
         return -1; //para revisar por errores
     }
-    
+    free(actual)   ;
 }
 
 
@@ -105,13 +118,15 @@ char convertirIntChar(int numero){
     return letra;
 }
 
-void liberarMemoria(struct Nodo* inicio){
-  struct Nodo* actual = inicio;
-  while(inicio != NULL){ //se ejecutara hasta que pase por toda la lista
-    actual = actual->siguiente;  //actualizamos el siguiente nodo a eliminar
-    free(inicio);  //eliminamos el nodo actual
-    inicio = actual;  //actualizamos el nodo actual al siguiente
-  }
+void liberarMemoria(Nodo *inicio){
+    Nodo* actual = inicio;
+    Nodo* siguiente = NULL;
+    
+    while(actual != NULL) {
+        siguiente = actual->siguiente;
+        free(actual);
+        actual = siguiente;
+    }
 }
 //ni idea como son tan distintos
 void liberarDigitos(Nodo *inicio) {//elimina los digitos de un enterolargo 

@@ -1,8 +1,22 @@
-//
+//free
 //  entero_largo.h
 //  Taller 2 - EdD - 2024.1
 //
 //  Plantilla librería implementación EnteroLargo
+#ifndef stdlib_h
+#define stdlib_h
+#include <stdlib.h>
+#endif /* stdlid_h */
+
+#ifndef stdio_h
+#define stdio_h
+#include <stdio.h>
+#endif /* stdio_h */
+
+#ifndef string_h
+#define string_h
+#include <string.h>
+#endif /* string_h */
 
 #ifndef lista_enlazada_h
 #define lista_enlazada_h
@@ -15,6 +29,12 @@
 //
 //Definición estructura de datos
 //
+typedef struct _enterolargo{    //lista para numeros en formato int
+    int cantidadDigitos;//cantidad de dígitos
+    char signo;//signo 0=menos, 1 = mas   
+    struct Nodo *siguiente;//direccion a digitos empezando la lista 
+}EnteroLargo;
+
 
 //
 //Prototipos interfaz
@@ -46,7 +66,7 @@ EnteroLargo *creaEnteroLargoDesdeStr(char *numero){
     
     EnteroLargo *unEnteroLargo = (EnteroLargo*)malloc(sizeof(EnteroLargo));    //creamos y damos memoria
     unEnteroLargo->siguiente = NULL; //asignamos memoria al siguiente
-    int valor,i=0;
+    int valor,i=0,largotexto = strlen(numero)-1;
     
     //unEnteroLargo ->cantidadDigitos = sizeof(numero)
     unEnteroLargo ->cantidadDigitos = strlen(numero);
@@ -55,26 +75,29 @@ EnteroLargo *creaEnteroLargoDesdeStr(char *numero){
     if(numero[0] == '-'){//preguntamos si el primer dato en el str es - ; si es el caso avanzamos en 1 la lectura del str y asignamos guardamos el signo
         i++;
         unEnteroLargo->signo = '-';
+       unEnteroLargo->cantidadDigitos--;
+
+    }else if(numero[0] == '+'){//caso concreto añadido por apuntes del profe
+        i++;
+        unEnteroLargo->signo = '+';
+       
     }else{
         unEnteroLargo->signo = '+';
     }
     
-    while(i<(unEnteroLargo->cantidadDigitos)){ //mientras i sea menor o igual a la cantidad de digitos en el str
+    while(i<=(largotexto)){ //mientras i sea menor o igual a la cantidad de digitos en el str
         valor = convertirCharInt(numero[i]); //convertimos el char en int
         agregarElemento(&(unEnteroLargo->siguiente),valor); //agregamos el int a la lista en la siguiente posicion
         i++;
     }
-    
+     
     return(unEnteroLargo);
 }
 
 
-void strToInt(char *num){
-    
-}
 
 char *creaStrDesdeEnteroLargo(EnteroLargo *numero){
-    int tamanoStr = numero->cantidadDigitos; 
+    int tamanoStr = numero->cantidadDigitos+1  ; //escenario de tamaño deberia ser arreglado con cambio de logica por signos
     int valor, negativo = 0;
     char digito;
     
@@ -83,19 +106,22 @@ char *creaStrDesdeEnteroLargo(EnteroLargo *numero){
     if (numero->signo == '-') {//preguntamos si el signo es negativo para un int importante
         auxStr[0] = '-'; 
         negativo = 1;
-    }else{
+    }else if(numero->signo == '+'){
+        auxStr[0] = '+'; 
+    }
+    else{
         auxStr[0] = '+'; 
     }
                     //NO SACAR, el negativo es importante como dije, si no esta , cuando se trabaje con el signo negativo, al final del string quedara un \ dependiendo de la cantidad de espacios vacios no asignados haya
-    for (int i = 0; i < tamanoStr-negativo; i++) {      // mas '\' mas espacio extra tiene el string
+    for (int i = 1; i <= tamanoStr; i++) {      // mas '\' mas espacio extra tiene el string
         //buscamos el valor segun la posicion
-        valor = leerNumeroLista(numero->siguiente, i);
+        valor = leerNumeroLista(numero->siguiente, i-1);
         digito = convertirIntChar(valor);//convertimos el formato del valor a char
         
-        auxStr[i + negativo] = digito; //acoplamos en la posicion el valor
+        auxStr[i] = digito; //acoplamos en la posicion el valor
     }
     
-    auxStr[tamanoStr + negativo] = '\0';//aseguramos que el string termine en el formato correcto
+    auxStr[tamanoStr] = '\0';//aseguramos que el string termine en el formato correcto
     
     return auxStr;
     
@@ -129,10 +155,11 @@ void copiaEnteroLargo(EnteroLargo *destino, EnteroLargo *fuente){
 }
 
 
-void eliminaEnteroLargo(EnteroLargo *numero){
-    //...
+void eliminaEnteroLargo(EnteroLargo *numero)
+{
+    liberarDigitos(numero->siguiente); // eliminamos los digitos guardados dentro del entero largo via liberando la memoria
+    free(numero);
 }
-
 //ESTA FUNCIÓN DEBE EXISTIR PARA QUE FUNCIONEN LAS PRUEBAS AUTOMÁTICAS
 //PARA QUE FUNCIONE DEBE HACER LOS CAMBIOS INDICADOS EN LOS COMENTARIOS
 void muestraEnteroLargo(EnteroLargo *numero){
@@ -212,7 +239,7 @@ EnteroLargo *leeEnteroLargo(char *nombreArchivo) {
     FILE *archivo = fopen(nombreArchivo, "rb");
     if (archivo == NULL) {
         printf("Error al abrir el archivo %s para leer.\n", nombreArchivo);
-        free(unEnteroLargo);
+        
         return NULL;
     }
 
@@ -237,13 +264,8 @@ EnteroLargo *leeEnteroLargo(char *nombreArchivo) {
 
     // Construir la lista enlazada de dígitos
     if (construirListaDigitos(archivo, unEnteroLargo) == -1) {
-        Nodo *temp = unEnteroLargo->siguiente;
-        while (temp != NULL) {
-            Nodo *siguiente = temp->siguiente;
-            free(temp);
-            temp = siguiente;
-        }
-        free(unEnteroLargo);
+        
+        eliminaEnteroLargo(unEnteroLargo);
         fclose(archivo);
         return NULL;
     }
@@ -296,8 +318,6 @@ int construirListaDigitos(FILE *archivo, EnteroLargo *unEnteroLargo) {
             free(nuevoNodo);
             return -1;
         }
-        // Debug
-        // printf("Dígito leído: %d\n", nuevoNodo->digito);
 
         nuevoNodo->siguiente = NULL;
         if (anterior == NULL) {
@@ -311,11 +331,20 @@ int construirListaDigitos(FILE *archivo, EnteroLargo *unEnteroLargo) {
     return 0;
 }
 
-
-int igualEnteroLargo(EnteroLargo *numero1, EnteroLargo *numero2){
-    //...
-    return(0);
+//------------
+int igualEnteroLargo(EnteroLargo *numero1, EnteroLargo *numero2){ //yo añadi esta funcion entre las primeras. No se porque no estaba, seguramente alguien subio una version que no la tenia. Como no solto errores? no tengo idea
+    if(numero1->cantidadDigitos != numero2->cantidadDigitos){//comparamos cantidad digitos
+        return 0;//false
+    }
+    if(numero1->signo != numero2->signo){//comparamos signos
+        return 0;//false
+    }
+    if(igualLista(numero1->siguiente,numero2->siguiente)==0){//comparamos digito por digito
+        return 0;//false
+    }
+    return(1);//si todo es verdad pasa true
 }
+//------------
 
 // Función para comparar la magnitud de dos números
 int compararMagnitud(EnteroLargo *numero1, EnteroLargo *numero2) {
@@ -338,64 +367,6 @@ int compararMagnitud(EnteroLargo *numero1, EnteroLargo *numero2) {
         return 0; // Son iguales en valor absoluto
     }
 }
-/* 
-// Nueva función para verificar signos y realizar conversiones necesarias
-EnteroLargo *verificarSignos(EnteroLargo *numero1, EnteroLargo *numero2, char operacion) {
-    if (operacion == '+') {
-        if (numero1->signo != numero2->signo) {
-            EnteroLargo *numeroPositivo = (EnteroLargo *)malloc(sizeof(EnteroLargo));
-            if (compararMagnitud(numero1, numero2) >= 0) {
-                copiaEnteroLargo(numeroPositivo, numero1);
-                numeroPositivo->signo = '+';
-                EnteroLargo *resultado = restaEnteroLargo(numeroPositivo, numero2);
-                liberarDigitos(numeroPositivo->siguiente);
-                free(numeroPositivo);
-                resultado->signo = numero1->signo;
-                return resultado;
-            } else {
-                copiaEnteroLargo(numeroPositivo, numero2);
-                numeroPositivo->signo = '+';
-                EnteroLargo *resultado = restaEnteroLargo(numeroPositivo, numero1);
-                liberarDigitos(numeroPositivo->siguiente);
-                free(numeroPositivo);
-                resultado->signo = numero2->signo;
-                return resultado;
-            }
-        }
-    } else if (operacion == '-') {
-        if (numero1->signo == '+' && numero2->signo == '+') {
-            return NULL; // Caso estándar: ambos positivos
-        } else if (numero1->signo == '-' && numero2->signo == '+') {
-            EnteroLargo *numero1Positivo = (EnteroLargo *)malloc(sizeof(EnteroLargo));
-            copiaEnteroLargo(numero1Positivo, numero1);
-            numero1Positivo->signo = '+';
-            EnteroLargo *resultado = sumaEnteroLargo(numero1Positivo, numero2);
-            resultado->signo = '-';
-            liberarDigitos(numero1Positivo->siguiente);
-            free(numero1Positivo);
-            return resultado;
-        } else if (numero1->signo == '+' && numero2->signo == '-') {
-            EnteroLargo *numero2Positivo = (EnteroLargo *)malloc(sizeof(EnteroLargo));
-            copiaEnteroLargo(numero2Positivo, numero2);
-            numero2Positivo->signo = '+';
-            EnteroLargo *resultado = sumaEnteroLargo(numero1, numero2Positivo);
-            liberarDigitos(numero2Positivo->siguiente);
-            free(numero2Positivo);
-            return resultado;
-        } else if (numero1->signo == '-' && numero2->signo == '-') {
-            EnteroLargo *numero2Positivo = (EnteroLargo *)malloc(sizeof(EnteroLargo));
-            copiaEnteroLargo(numero2Positivo, numero2);
-            numero2Positivo->signo = '+';
-            EnteroLargo *resultado = restaEnteroLargo(numero2Positivo, numero1);
-            resultado->signo = '+';
-            liberarDigitos(numero2Positivo->siguiente);
-            free(numero2Positivo);
-            return resultado;
-        }
-    }
-    return NULL; // Si no se requiere ninguna conversión
-}
-*/
 
 void eliminarCerosIzquierda(EnteroLargo *numero) {
     if (numero == NULL || numero->siguiente == NULL) {
@@ -452,10 +423,7 @@ int mayorMenorEnteroLargo(EnteroLargo *numero1, EnteroLargo *numero2){
 }
 
 EnteroLargo *sumaEnteroLargo(EnteroLargo *numero1, EnteroLargo *numero2) {
-   /* printf("SUMA: \n");
-    printf("num 1 :");muestraEnteroLargo(numero1);printf("\n");
-    printf("num 2 :");muestraEnteroLargo(numero2);printf("\n");
-    printf("\nTTTT\n");*/
+   
     // Validación de entrada
     if (numero1 == NULL || numero2 == NULL) return NULL;
 
@@ -527,10 +495,7 @@ EnteroLargo *sumaEnteroLargo(EnteroLargo *numero1, EnteroLargo *numero2) {
 }
 
 EnteroLargo *restaEnteroLargo(EnteroLargo *numero1, EnteroLargo *numero2) {
-   /* printf("RESTA: \n");
-    printf("num 1 :");muestraEnteroLargo(numero1);printf("\n");
-    printf("num 2 :");muestraEnteroLargo(numero2);printf("\n");
-    printf("\nTTTT\n");*/
+   
     // Validación de entrada
     if (numero1 == NULL || numero2 == NULL) return NULL;
 
@@ -606,7 +571,7 @@ EnteroLargo *restaEnteroLargo(EnteroLargo *numero1, EnteroLargo *numero2) {
 
         resultado->cantidadDigitos++;
     }
-    //resultado->cantidadDigitos++;
+    
     // Invertir la lista del resultado y eliminar ceros a la izquierda
     invertirLista(&(resultado->siguiente));
     eliminarCerosIzquierda(resultado);
@@ -636,7 +601,7 @@ char multiSignos(char signo1, char signo2) {
 
 
 EnteroLargo *multiplicaEnteroLargo(EnteroLargo *multiplicando, EnteroLargo *multiplicador){ //WIP PV
-    //EnteroLargo *resultado = NULL;
+    
     EnteroLargo *resultado = (EnteroLargo *)malloc(sizeof(EnteroLargo));
     
     // X * 0    caso multiplicador = 0          
@@ -769,3 +734,142 @@ EnteroLargo *divideEnteroLargo(EnteroLargo *dividendo, EnteroLargo *divisor){
     resultado->signo = sg;
     return resultado;
 }
+
+
+/*gpt
+
+EnteroLargo *multiplicaEnteroLargo(EnteroLargo *multiplicando, EnteroLargo *multiplicador) {
+    // Validación de entrada
+    if (multiplicando == NULL || multiplicador == NULL) return NULL;
+
+    EnteroLargo *resultado = (EnteroLargo *)malloc(sizeof(EnteroLargo));
+    resultado->siguiente = crearNodo(0);
+    resultado->cantidadDigitos = 1;
+    resultado->signo = multiplicando->signo == multiplicador->signo ? '+' : '-';
+
+    // Invertir listas para facilitar la multiplicación dígito a dígito
+    invertirLista(&(multiplicando->siguiente));
+    invertirLista(&(multiplicador->siguiente));
+
+    Nodo *nodoMultiplicador = multiplicador->siguiente;
+    int desplazamiento = 0;
+
+    while (nodoMultiplicador != NULL) {
+        Nodo *nodoMultiplicando = multiplicando->siguiente;
+        EnteroLargo *tempResultado = (EnteroLargo *)malloc(sizeof(EnteroLargo));
+        tempResultado->siguiente = NULL;
+        tempResultado->cantidadDigitos = 0;
+        Nodo *ultimoNodoTemp = NULL;
+
+        int acarreo = 0;
+        for (int i = 0; i < desplazamiento; i++) {
+            Nodo *nuevoNodo = crearNodo(0);
+            if (tempResultado->siguiente == NULL) {
+                tempResultado->siguiente = nuevoNodo;
+            } else {
+                ultimoNodoTemp->siguiente = nuevoNodo;
+            }
+            ultimoNodoTemp = nuevoNodo;
+            tempResultado->cantidadDigitos++;
+        }
+
+        while (nodoMultiplicando != NULL || acarreo != 0) {
+            int digitoMultiplicando = nodoMultiplicando ? nodoMultiplicando->digito : 0;
+            int producto = digitoMultiplicando * nodoMultiplicador->digito + acarreo;
+            acarreo = producto / 10;
+            int digitoResultado = producto % 10;
+
+            Nodo *nuevoNodo = crearNodo(digitoResultado);
+            if (tempResultado->siguiente == NULL) {
+                tempResultado->siguiente = nuevoNodo;
+            } else {
+                ultimoNodoTemp->siguiente = nuevoNodo;
+            }
+            ultimoNodoTemp = nuevoNodo;
+            tempResultado->cantidadDigitos++;
+
+            if (nodoMultiplicando) nodoMultiplicando = nodoMultiplicando->siguiente;
+        }
+
+        EnteroLargo *nuevoResultado = sumaEnteroLargo(resultado, tempResultado);
+        eliminaEnteroLargo(resultado);
+        eliminaEnteroLargo(tempResultado);
+        resultado = nuevoResultado;
+
+        nodoMultiplicador = nodoMultiplicador->siguiente;
+        desplazamiento++;
+    }
+
+    // Invertir la lista del resultado y eliminar ceros a la izquierda
+    invertirLista(&(resultado->siguiente));
+    eliminarCerosIzquierda(resultado);
+
+    // Restaurar las listas originales
+    invertirLista(&(multiplicando->siguiente));
+    invertirLista(&(multiplicador->siguiente));
+    
+    return resultado;
+}
+
+EnteroLargo *divideEnteroLargo(EnteroLargo *dividendo, EnteroLargo *divisor) {
+    // Validación de entrada
+    if (dividendo == NULL || divisor == NULL) return NULL;
+
+    // Si el divisor es cero, retornamos NULL (división por cero no está definida)
+    if (divisor->siguiente == NULL || divisor->siguiente->digito == 0) return NULL;
+
+    EnteroLargo *resultado = (EnteroLargo *)malloc(sizeof(EnteroLargo));
+    resultado->siguiente = crearNodo(0);
+    resultado->cantidadDigitos = 1;
+    resultado->signo = dividendo->signo == divisor->signo ? '+' : '-';
+
+    EnteroLargo *resto = (EnteroLargo *)malloc(sizeof(EnteroLargo));
+    copiaEnteroLargo(resto, dividendo);
+    resto->signo = '+';
+
+    EnteroLargo *unidad = creaEnteroLargoDesdeStr("1");
+
+    while (compararMagnitud(resto, divisor) >= 0) {
+        EnteroLargo *tempDivisor = (EnteroLargo *)malloc(sizeof(EnteroLargo));
+        copiaEnteroLargo(tempDivisor, divisor);
+
+        EnteroLargo *multiplicadorTemp = creaEnteroLargoDesdeStr("1");
+        EnteroLargo *multiplicadorMax = (EnteroLargo *)malloc(sizeof(EnteroLargo));
+        copiaEnteroLargo(multiplicadorMax, multiplicadorTemp);
+
+        while (compararMagnitud(resto, tempDivisor) >= 0) {
+            EnteroLargo *nuevoDivisor = sumaEnteroLargo(tempDivisor, tempDivisor);
+            if (compararMagnitud(resto, nuevoDivisor) >= 0) {
+                eliminaEnteroLargo(tempDivisor);
+                tempDivisor = nuevoDivisor;
+
+                EnteroLargo *nuevoMultiplicador = sumaEnteroLargo(multiplicadorTemp, multiplicadorTemp);
+                eliminaEnteroLargo(multiplicadorTemp);
+                multiplicadorTemp = nuevoMultiplicador;
+            } else {
+                eliminaEnteroLargo(nuevoDivisor);
+                break;
+            }
+        }
+
+        EnteroLargo *nuevoResto = restaEnteroLargo(resto, tempDivisor);
+        eliminaEnteroLargo(resto);
+        resto = nuevoResto;
+
+        EnteroLargo *nuevoResultado = sumaEnteroLargo(resultado, multiplicadorTemp);
+        eliminaEnteroLargo(resultado);
+        eliminaEnteroLargo(multiplicadorTemp);
+        resultado = nuevoResultado;
+
+        eliminaEnteroLargo(tempDivisor);
+    }
+
+    // Eliminar ceros a la izquierda
+    eliminarCerosIzquierda(resultado);
+    
+    // Liberar memoria del resto y de la unidad
+    eliminaEnteroLargo(resto);
+    eliminaEnteroLargo(unidad);
+
+    return resultado;
+}*/
